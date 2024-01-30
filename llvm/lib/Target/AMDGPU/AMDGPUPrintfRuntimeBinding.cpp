@@ -194,19 +194,18 @@ bool AMDGPUPrintfRuntimeBindingImpl::lowerPrintfForGpu(Module &M) {
         Builder.SetInsertPoint(CI);
         Builder.SetCurrentDebugLocation(CI->getDebugLoc());
 
-        if (ArgType->isFloatingPointTy()) {
-          Arg = Builder.CreateBitCast(
-              Arg,
-              IntegerType::getIntNTy(Ctx, ArgType->getPrimitiveSizeInBits()));
-        }
-
         if (OpConvSpecifiers[ArgCount - 1] == 'x' ||
             OpConvSpecifiers[ArgCount - 1] == 'X' ||
             OpConvSpecifiers[ArgCount - 1] == 'u' ||
             OpConvSpecifiers[ArgCount - 1] == 'o')
           Arg = Builder.CreateZExt(Arg, ResType);
-        else
-          Arg = Builder.CreateSExt(Arg, ResType);
+        else {
+         if (ArgType->isFloatingPointTy()) {
+            Arg = Builder.CreateFPExt(Arg, Builder.getFloatTy());
+          }
+         else
+             Arg = Builder.CreateSExt(Arg, ResType);
+        }
         ArgType = Arg->getType();
         ArgSize = TD->getTypeAllocSize(ArgType);
         CI->setOperand(ArgCount, Arg);
