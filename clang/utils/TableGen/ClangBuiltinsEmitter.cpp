@@ -12,6 +12,7 @@
 
 #include "TableGenBackends.h"
 #include "llvm/ADT/StringSwitch.h"
+#include "llvm/Support/Regex.h"
 #include "llvm/TableGen/Error.h"
 #include "llvm/TableGen/Record.h"
 #include "llvm/TableGen/TableGenBackend.h"
@@ -26,6 +27,8 @@ enum class BuiltinType {
   LangBuiltin,
   TargetBuiltin,
 };
+
+static const llvm::Regex ASpaceRegex("addrspace\\[([0-9]+)\\]");
 
 class PrototypeParser {
 public:
@@ -90,9 +93,39 @@ private:
     }
   }
 
+  bool TryConsumeAddrspace(StringRef &T, std::string &ASpaceNum,
+                           bool &isReference) {
+    llvm::SmallVector<StringRef> Matches;
+
+    if (!ASpaceRegex.match(T, &Matches))
+      return false;
+
+    if (T.consume_back(Matches[0])) {
+        T = T.trim();
+        if (!T.consume_back("*")) {
+          if (!T.consume_back("&"))
+            PrintFatalError(
+                Loc,
+                "addrspace must follow either pointer or reference specifier");
+          else
+            isReference = true;
+        } else {
+          isReference = false;
+        }
+        ASpaceNum = Matches[1];
+        return true;
+      }
+    }
+
   void ParseType(StringRef T) {
     T = T.trim();
-    if (T.consume_back("*")) {
+    std::string ASpaceNum = "";
+    bool isReference = false;
+    if (TryConsumeAddrspace(T, ASpaceNum, isReference)) {
+      ParseType(T);
+      Type += (isReference ? "&" : "*");
+      Type += ASpaceNum;
+    } else if (T.consume_back("*")) {
       ParseType(T);
       Type += "*";
     } else if (T.consume_back("const")) {
