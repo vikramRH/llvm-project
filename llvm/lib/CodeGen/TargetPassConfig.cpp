@@ -1475,7 +1475,7 @@ void TargetPassConfig::addOptimizedRegAlloc() {
   // The machine scheduler may accidentally create disconnected components
   // when moving subregister definitions around, avoid this by splitting them to
   // separate vregs before. Splitting can also improve reg. allocation quality.
-  addPass(&RenameIndependentSubregsID);
+  addPass(&RenameIndependentSubregsLegacyID);
 
   // PreRA instruction scheduling.
   addPass(&MachineSchedulerID);

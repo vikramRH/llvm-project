@@ -1494,7 +1494,7 @@ void GCNPassConfig::addOptimizedRegAlloc() {
   insertPass(&PHIEliminationID, &SILowerControlFlowLegacyID);
 
   if (EnableRewritePartialRegUses)
-    insertPass(&RenameIndependentSubregsID, &GCNRewritePartialRegUsesID);
+    insertPass(&RenameIndependentSubregsLegacyID, &GCNRewritePartialRegUsesID);
 
   if (isPassEnabled(EnablePreRAOptimizations))
     insertPass(&MachineSchedulerID, &GCNPreRAOptimizationsID);

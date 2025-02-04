@@ -494,7 +494,7 @@ namespace llvm {
   /// This pass detects subregister lanes in a virtual register that are used
   /// independently of other lanes and splits them into separate virtual
   /// registers.
-  extern char &RenameIndependentSubregsID;
+  extern char &RenameIndependentSubregsLegacyID;
 
   /// This pass is executed POST-RA to collect which physical registers are
   /// preserved by given machine function.
