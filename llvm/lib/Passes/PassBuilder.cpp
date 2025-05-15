@@ -77,6 +77,7 @@
 #include "llvm/Analysis/TargetTransformInfo.h"
 #include "llvm/Analysis/TypeBasedAliasAnalysis.h"
 #include "llvm/Analysis/UniformityAnalysis.h"
+#include "llvm/CodeGen/AsmPrinter.h"
 #include "llvm/CodeGen/AssignmentTrackingAnalysis.h"
 #include "llvm/CodeGen/AtomicExpand.h"
 #include "llvm/CodeGen/BasicBlockSectionsProfileReader.h"
@@ -524,6 +525,12 @@ PassBuilder::PassBuilder(TargetMachine *TM, PipelineTuningOptions PTO,
                                           PARAMS)                              \
   PIC->addClassToPassName(CLASS, NAME);
 #include "llvm/Passes/MachinePassRegistry.def"
+
+      PIC->addClassToPassName(AsmPrinterInitializePass::name(),
+                              "asm-printer-initialize");
+      PIC->addClassToPassName(AsmPrinterPass::name(), "asm-printer");
+      PIC->addClassToPassName(AsmPrinterFinalizePass::name(),
+                              "asm-printer-finalize");
     });
   }
 }
