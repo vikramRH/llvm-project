@@ -391,6 +391,26 @@ namespace llvm {
 
 extern cl::opt<bool> EnableFSDiscriminator;
 
+/// The authoritative source of the selector type is this function.
+///
+/// Command line options override the target machine defaults.
+/// TODO: [NPM] This is duplicated in CodeGenPassBuilder::addCoreISelPasses.
+InstructionSelectionType getSelectorType(const TargetMachine &TM) {
+  if (EnableFastISelOption == cl::BOU_TRUE)
+    return InstructionSelectionType::FastISel;
+  
+  if (EnableGlobalISelOption == cl::BOU_TRUE ||
+           (TM.Options.EnableGlobalISel &&
+            EnableGlobalISelOption != cl::BOU_FALSE))
+    return InstructionSelectionType::GlobalISel;
+
+  if (TM.getOptLevel() == CodeGenOptLevel::None &&
+           TM.getO0WantsFastISel())
+    return InstructionSelectionType::FastISel;
+
+  return InstructionSelectionType::SelectionDAG;
+}
+
 class PassConfigImpl {
 public:
   // List of passes explicitly substituted by this target. Normally this is
@@ -981,26 +1001,13 @@ bool TargetPassConfig::addCoreISelPasses() {
   TM->setO0WantsFastISel(EnableFastISelOption != cl::BOU_FALSE);
 
   // Determine an instruction selector.
-  enum class SelectorType { SelectionDAG, FastISel, GlobalISel };
-  SelectorType Selector;
-
-  if (EnableFastISelOption == cl::BOU_TRUE)
-    Selector = SelectorType::FastISel;
-  else if (EnableGlobalISelOption == cl::BOU_TRUE ||
-           (TM->Options.EnableGlobalISel &&
-            EnableGlobalISelOption != cl::BOU_FALSE))
-    Selector = SelectorType::GlobalISel;
-  else if (TM->getOptLevel() == CodeGenOptLevel::None &&
-           TM->getO0WantsFastISel())
-    Selector = SelectorType::FastISel;
-  else
-    Selector = SelectorType::SelectionDAG;
+  InstructionSelectionType Selector = getSelectorType(*TM);
 
   // Set consistently TM->Options.EnableFastISel and EnableGlobalISel.
-  if (Selector == SelectorType::FastISel) {
+  if (Selector == InstructionSelectionType::FastISel) {
     TM->setFastISel(true);
     TM->setGlobalISel(false);
-  } else if (Selector == SelectorType::GlobalISel) {
+  } else if (Selector == InstructionSelectionType::GlobalISel) {
     TM->setFastISel(false);
     TM->setGlobalISel(true);
   }
@@ -1015,11 +1022,11 @@ bool TargetPassConfig::addCoreISelPasses() {
   //        and -run-pass seem to be unaffected. The majority of GlobalISel
   //        testing uses -run-pass so this probably isn't too bad.
   SaveAndRestore SavedDebugifyIsSafe(DebugifyIsSafe);
-  if (Selector != SelectorType::GlobalISel || !isGlobalISelAbortEnabled())
+  if (Selector != InstructionSelectionType::GlobalISel || !isGlobalISelAbortEnabled())
     DebugifyIsSafe = false;
 
   // Add instruction selector passes for global isel if enabled.
-  if (Selector == SelectorType::GlobalISel) {
+  if (Selector == InstructionSelectionType::GlobalISel) {
     SaveAndRestore SavedAddingMachinePasses(AddingMachinePasses, true);
     if (addIRTranslator())
       return true;
@@ -1044,13 +1051,13 @@ bool TargetPassConfig::addCoreISelPasses() {
 
   // Pass to reset the MachineFunction if the ISel failed. Outside of the above
   // if so that the verifier is not added to it.
-  if (Selector == SelectorType::GlobalISel)
+  if (Selector == InstructionSelectionType::GlobalISel)
     addPass(createResetMachineFunctionPass(
         reportDiagnosticWhenGlobalISelFallback(), isGlobalISelAbortEnabled()));
 
   // Run the SDAG InstSelector, providing a fallback path when we do not want to
   // abort on not-yet-supported input.
-  if (Selector != SelectorType::GlobalISel || !isGlobalISelAbortEnabled())
+  if (Selector != InstructionSelectionType::GlobalISel || !isGlobalISelAbortEnabled())
     if (addInstSelector())
       return true;
 

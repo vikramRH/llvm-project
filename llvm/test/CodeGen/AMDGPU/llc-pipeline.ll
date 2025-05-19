@@ -1119,6 +1119,7 @@
 ; GCN-O3-NEXT:      Scalar Evolution Analysis
 ; GCN-O3-NEXT:      Nary reassociation
 ; GCN-O3-NEXT:      Early CSE
+>>>>>>>>>>>>>>>>>
 ; GCN-O3-NEXT:      Cycle Info Analysis
 ; GCN-O3-NEXT:      Uniformity Analysis
 ; GCN-O3-NEXT:      AMDGPU IR optimizations

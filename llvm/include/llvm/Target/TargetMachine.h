@@ -282,7 +282,7 @@ public:
   void setOptLevel(CodeGenOptLevel Level) { OptLevel = Level; }
 
   void setFastISel(bool Enable) { Options.EnableFastISel = Enable; }
-  bool getO0WantsFastISel() { return O0WantsFastISel; }
+  bool getO0WantsFastISel() const { return O0WantsFastISel; }
   void setO0WantsFastISel(bool Enable) { O0WantsFastISel = Enable; }
   void setGlobalISel(bool Enable) { Options.EnableGlobalISel = Enable; }
   void setGlobalISelAbort(GlobalISelAbortMode Mode) {

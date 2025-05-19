@@ -725,6 +725,8 @@ AMDGPUTargetMachine::AMDGPUTargetMachine(const Target &T, const Triple &TT,
           getEffectiveCodeModel(CM, CodeModel::Small), OptLevel),
       TLOF(createTLOF(getTargetTriple())) {
   initAsmInfo();
+  if (getSelectorType(*this) != InstructionSelectionType::GlobalISel)
+    this->Options.EnableNewPM = true;
   if (TT.isAMDGCN()) {
     if (getMCSubtargetInfo()->checkFeatures("+wavefrontsize64"))
       MRI.reset(llvm::createGCNMCRegisterInfo(AMDGPUDwarfFlavour::Wave64));

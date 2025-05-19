@@ -13,6 +13,7 @@
 #ifndef LLVM_CODEGEN_TARGETPASSCONFIG_H
 #define LLVM_CODEGEN_TARGETPASSCONFIG_H
 
+#include "llvm/CodeGen/FastISel.h"
 #include "llvm/Pass.h"
 #include "llvm/Support/CodeGen.h"
 #include "llvm/Support/Compiler.h"
@@ -35,6 +36,10 @@ class PassManagerBase;
 } // end namespace legacy
 
 using legacy::PassManagerBase;
+
+enum class InstructionSelectionType { SelectionDAG, FastISel, GlobalISel };
+
+InstructionSelectionType getSelectorType(const TargetMachine &TM);
 
 /// Discriminated union of Pass ID types.
 ///

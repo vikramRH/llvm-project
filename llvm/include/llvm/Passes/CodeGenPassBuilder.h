@@ -939,33 +939,34 @@ Error CodeGenPassBuilder<Derived, TargetMachineT>::addCoreISelPasses(
   TM.setO0WantsFastISel(Opt.EnableFastISelOption.value_or(true));
 
   // Determine an instruction selector.
-  enum class SelectorType { SelectionDAG, FastISel, GlobalISel };
-  SelectorType Selector;
+  // enum class SelectorType { SelectionDAG, FastISel, GlobalISel };
+  InstructionSelectionType Selector = getSelectorType(TM);
 
-  if (Opt.EnableFastISelOption && *Opt.EnableFastISelOption == true)
-    Selector = SelectorType::FastISel;
-  else if ((Opt.EnableGlobalISelOption &&
-            *Opt.EnableGlobalISelOption == true) ||
-           (TM.Options.EnableGlobalISel &&
-            (!Opt.EnableGlobalISelOption ||
-             *Opt.EnableGlobalISelOption == false)))
-    Selector = SelectorType::GlobalISel;
-  else if (TM.getOptLevel() == CodeGenOptLevel::None && TM.getO0WantsFastISel())
-    Selector = SelectorType::FastISel;
-  else
-    Selector = SelectorType::SelectionDAG;
+  // if (Opt.EnableFastISelOption && *Opt.EnableFastISelOption == true)
+  //   Selector = SelectorType::FastISel;
+  // else if ((Opt.EnableGlobalISelOption &&
+  //           *Opt.EnableGlobalISelOption == true) ||
+  //          (TM.Options.EnableGlobalISel &&
+  //           (!Opt.EnableGlobalISelOption ||
+  //            *Opt.EnableGlobalISelOption == false)))
+  //   Selector = SelectorType::GlobalISel;
+  // else if (TM.getOptLevel() == CodeGenOptLevel::None && TM.getO0WantsFastISel())
+  //   Selector = SelectorType::FastISel;
+  // else
+  //   Selector = SelectorType::SelectionDAG;
 
   // Set consistently TM.Options.EnableFastISel and EnableGlobalISel.
-  if (Selector == SelectorType::FastISel) {
+  if (Selector == InstructionSelectionType::FastISel) {
     TM.setFastISel(true);
     TM.setGlobalISel(false);
-  } else if (Selector == SelectorType::GlobalISel) {
+  } else if (Selector == InstructionSelectionType::GlobalISel) {
+    llvm::dbgs() << "wait how?\n";
     TM.setFastISel(false);
     TM.setGlobalISel(true);
   }
 
   // Add instruction selector passes.
-  if (Selector == SelectorType::GlobalISel) {
+  if (Selector == InstructionSelectionType::GlobalISel) {
     if (auto Err = derived().addIRTranslator(addPass))
       return std::move(Err);
 

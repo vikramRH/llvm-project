@@ -71,6 +71,7 @@ MachineModuleSlotTracker::MachineModuleSlotTracker(
       TheFunction(MF->getFunction()), TheMMI(MMI) {
   setProcessHook([this](AbstractSlotTrackerStorage *AST, const Module *M,
                         bool ShouldInitializeAllMetadata) {
+    llvm::dbgs() << "in setProcessHook\n";
     this->processMachineModule(AST, M, ShouldInitializeAllMetadata);
   });
   setProcessHook([this](AbstractSlotTrackerStorage *AST, const Function *F,

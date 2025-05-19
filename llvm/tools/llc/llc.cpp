@@ -434,6 +434,22 @@ static bool addPass(PassManagerBase &PM, const char *argv0,
   return false;
 }
 
+static bool isNewPMEnabled(const TargetOptions &Options) {
+  // return EnableNewPassManager.getNumOccurrences() ?
+  //         EnableNewPassManager : (Options.EnableNewPM || !PassPipeline.empty());
+  
+  return !RunPass.getNumOccurrences() && (EnableNewPassManager || !PassPipeline.empty() ||
+          (Options.EnableNewPM && !EnableNewPassManager.getNumOccurrences()));
+  // if (Options.EnableNewPM) {
+  //   // if (EnableNewPassManager.getNumOccurrences() == 1)
+  //   //   return EnableNewPassManager;
+  //   // return true;
+  //   return EnableNewPassManager.getNumOccurrences() ? EnableNewPassManager
+  //                                                  : true;
+  // }
+  // return EnableNewPassManager || !PassPipeline.empty();
+}
+
 static int compileModule(char **argv, LLVMContext &Context) {
   // Load the module to be compiled...
   SMDiagnostic Err;
@@ -649,7 +665,7 @@ static int compileModule(char **argv, LLVMContext &Context) {
   else if (VerifyEach)
     VK = VerifierKind::EachPass;
 
-  if (EnableNewPassManager || !PassPipeline.empty()) {
+  if (isNewPMEnabled(Target->Options)) {
     return compileModuleWithNewPM(argv[0], std::move(M), std::move(MIR),
                                   std::move(Target), std::move(Out),
                                   std::move(DwoOut), Context, TLII, VK,

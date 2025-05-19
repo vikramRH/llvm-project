@@ -1024,16 +1024,25 @@ static SlotTracker *createSlotTracker(const Value *V) {
 // Module level constructor. Causes the contents of the Module (sans functions)
 // to be added to the slot table.
 SlotTracker::SlotTracker(const Module *M, bool ShouldInitializeAllMetadata)
-    : TheModule(M), ShouldInitializeAllMetadata(ShouldInitializeAllMetadata) {}
+    : TheModule(M), ShouldInitializeAllMetadata(ShouldInitializeAllMetadata) {
+      // llvm::dbgs() << "ShouldInitializeAllMetadata-: " << ShouldInitializeAllMetadata
+                  //  << "\n";
+    }
 
 // Function level constructor. Causes the contents of the Module and the one
 // function provided to be added to the slot table.
 SlotTracker::SlotTracker(const Function *F, bool ShouldInitializeAllMetadata)
     : TheModule(F ? F->getParent() : nullptr), TheFunction(F),
-      ShouldInitializeAllMetadata(ShouldInitializeAllMetadata) {}
+      ShouldInitializeAllMetadata(ShouldInitializeAllMetadata) {
+      // llvm::dbgs() << "ShouldInitializeAllMetadata_: " << ShouldInitializeAllMetadata
+                  //  << "\n";
+      }
 
 SlotTracker::SlotTracker(const ModuleSummaryIndex *Index)
-    : TheModule(nullptr), ShouldInitializeAllMetadata(false), TheIndex(Index) {}
+    : TheModule(nullptr), ShouldInitializeAllMetadata(false), TheIndex(Index) {
+      // llvm::dbgs() << "ShouldInitializeAllMetadata=: " << ShouldInitializeAllMetadata
+                  //  << "\n";
+    }
 
 inline void SlotTracker::initializeIfNeeded() {
   if (TheModule) {
@@ -1384,7 +1393,8 @@ void SlotTracker::CreateFunctionSlot(const Value *V) {
 /// CreateModuleSlot - Insert the specified MDNode* into the slot table.
 void SlotTracker::CreateMetadataSlot(const MDNode *N) {
   assert(N && "Can't insert a null Value into SlotTracker!");
-
+  // llvm::dbgs() << "CreateMetadataSlot: " << *N << "\n";
+  // llvm_unreachable("CreateMetadataSlot: not implemented");
   // Don't make slots for DIExpressions. We just print them inline everywhere.
   if (isa<DIExpression>(N))
     return;
@@ -5441,10 +5451,14 @@ void ModuleSlotTracker::collectMDNodes(MachineMDNodeListType &L, unsigned LB,
   SlotTracker *ST = MachineStorage.get();
   if (!ST)
     return;
+  // llvm::dbgs() << "here is it: ";
 
-  for (auto &I : llvm::make_range(ST->mdn_begin(), ST->mdn_end()))
+  for (auto &I : llvm::make_range(ST->mdn_begin(), ST->mdn_end())) {
+    // llvm::dbgs() << "So this one here;";
     if (I.second >= LB && I.second < UB)
       L.push_back(std::make_pair(I.second, I.first));
+  }
+  // llvm::dbgs() << "\n";
 }
 
 #if !defined(NDEBUG) || defined(LLVM_ENABLE_DUMP)
