@@ -23,6 +23,7 @@
 using namespace llvm;
 
 void SIProgramInfo::reset(const MachineFunction &MF) {
+  llvm::dbgs() << "SIProgramInfo::reset\n";
   MCContext &Ctx = MF.getContext();
 
   const MCExpr *ZeroExpr = MCConstantExpr::create(0, Ctx);

@@ -207,7 +207,11 @@ void AMDGPUAsmPrinter::emitFunctionBodyStart() {
   }
 
   if (STM.isAmdHsaOS())
+{ 
+  llvm::dbgs() << "Before calling emitKernel, ProgramInfo.ScratchSize: "
+               << CurrentProgramInfo.ScratchSize << "\n";
     HSAMetadataStream->emitKernel(*MF, CurrentProgramInfo);
+}
 }
 
 void AMDGPUAsmPrinter::emitFunctionBodyEnd() {
@@ -642,7 +646,14 @@ AMDGPUAsmPrinter::getAmdhsaKernelDescriptor(const MachineFunction &MF,
   return KernelDescriptor;
 }
 
+void AMDGPUAsmPrinter::run(MachineFunction &MF, MachineFunctionAnalysisManager &MFAM) {
+  this->MFAM = &MFAM;
+  (void) runOnMachineFunction(MF);
+}
+
 bool AMDGPUAsmPrinter::runOnMachineFunction(MachineFunction &MF) {
+  llvm::dbgs() << "AMDGPUAsmPrinter::runOnMachineFunction: " << MF.getName()
+               << "\n";
   // Init target streamer lazily on the first function so that previous passes
   // can set metadata.
   if (!IsTargetStreamerInitialized)

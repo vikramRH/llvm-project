@@ -102,6 +102,7 @@ public:
   bool doInitialization(Module &M) override;
   bool doFinalization(Module &M) override;
   bool runOnMachineFunction(MachineFunction &MF) override;
+  void run(MachineFunction &MF, MachineFunctionAnalysisManager &) override;
 
   /// Wrapper for MCInstLowering.lowerOperand() for the tblgen'erated
   /// pseudo lowering.

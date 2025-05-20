@@ -489,6 +489,8 @@ msgpack::MapDocNode
 MetadataStreamerMsgPackV4::getHSAKernelProps(const MachineFunction &MF,
                                              const SIProgramInfo &ProgramInfo,
                                              unsigned CodeObjectVersion) const {
+  llvm::dbgs() << "HSAKernelProps\n";
+  llvm::dbgs() << "ProgramInfo.ScratchSize: " << ProgramInfo.ScratchSize << "\n";
   const GCNSubtarget &STM = MF.getSubtarget<GCNSubtarget>();
   const SIMachineFunctionInfo &MFI = *MF.getInfo<SIMachineFunctionInfo>();
   const Function &F = MF.getFunction();

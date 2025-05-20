@@ -433,8 +433,9 @@ public:
   }
   virtual void run(MachineFunction &MF, MachineFunctionAnalysisManager &MFAM) {
     this->MFAM = &MFAM;
-    SetupMachineFunction(MF);
-    emitFunctionBody();
+    // SetupMachineFunction(MF);
+    // emitFunctionBody();
+    (void)this->runOnMachineFunction(MF);
   }
 
   //===------------------------------------------------------------------===//
