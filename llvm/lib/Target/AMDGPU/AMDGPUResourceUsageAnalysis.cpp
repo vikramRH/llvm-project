@@ -30,8 +30,8 @@ using namespace llvm::AMDGPU;
 
 #define DEBUG_TYPE "amdgpu-resource-usage"
 
-char llvm::AMDGPUResourceUsageAnalysis::ID = 0;
-char &llvm::AMDGPUResourceUsageAnalysisID = AMDGPUResourceUsageAnalysis::ID;
+char llvm::AMDGPUResourceUsageWrapperLegacy::ID = 0;
+char &llvm::AMDGPUResourceUsageAnalysisID = AMDGPUResourceUsageWrapperLegacy::ID;
 
 // In code object v4 and older, we need to tell the runtime some amount ahead of
 // time if we don't know the true stack size. Assume a smaller number if this is
@@ -47,7 +47,7 @@ static cl::opt<uint32_t> clAssumedStackSizeForDynamicSizeObjects(
              "variable sized objects (in bytes)"),
     cl::Hidden, cl::init(4096));
 
-INITIALIZE_PASS(AMDGPUResourceUsageAnalysis, DEBUG_TYPE,
+INITIALIZE_PASS(AMDGPUResourceUsageWrapperLegacy, DEBUG_TYPE,
                 "Function register usage analysis", true, true)
 
 static const Function *getCalleeFunction(const MachineOperand &Op) {
@@ -68,12 +68,21 @@ static bool hasAnyNonFlatUseOfReg(const MachineRegisterInfo &MRI,
   return false;
 }
 
-bool AMDGPUResourceUsageAnalysis::runOnMachineFunction(MachineFunction &MF) {
+AnalysisKey AMDGPUResourceUsageAnalysis::Key;
+
+bool AMDGPUResourceUsageWrapperLegacy::runOnMachineFunction(MachineFunction &MF) {
   auto *TPC = getAnalysisIfAvailable<TargetPassConfig>();
   if (!TPC)
     return false;
 
   const TargetMachine &TM = TPC->getTM<TargetMachine>();
+  ResourceUsageInfo.compute(MF, TM);
+  return false;
+}
+
+bool AMDGPUResourceUsageInfo::compute(
+    MachineFunction &MF, const TargetMachine &TM) {
+      
   const MCSubtargetInfo &STI = *TM.getMCSubtargetInfo();
 
   // By default, for code object v5 and later, track only the minimum scratch
@@ -96,8 +105,8 @@ bool AMDGPUResourceUsageAnalysis::runOnMachineFunction(MachineFunction &MF) {
   return false;
 }
 
-AMDGPUResourceUsageAnalysis::SIFunctionResourceInfo
-AMDGPUResourceUsageAnalysis::analyzeResourceUsage(
+AMDGPUResourceUsageInfo::SIFunctionResourceInfo
+AMDGPUResourceUsageInfo::analyzeResourceUsage(
     const MachineFunction &MF, uint32_t AssumedStackSizeForDynamicSizeObjects,
     uint32_t AssumedStackSizeForExternalCall) const {
   SIFunctionResourceInfo Info;

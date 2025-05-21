@@ -21,7 +21,7 @@
 namespace llvm {
 
 class AMDGPUMachineFunction;
-struct AMDGPUResourceUsageAnalysis;
+struct AMDGPUResourceUsageInfo;
 class AMDGPUTargetStreamer;
 class MCCodeEmitter;
 class MCOperand;
@@ -43,7 +43,7 @@ private:
   unsigned CodeObjectVersion;
   void initializeTargetID(const Module &M);
 
-  AMDGPUResourceUsageAnalysis *ResourceUsage;
+  AMDGPUResourceUsageInfo *ResourceUsage;
 
   MCResourceInfo RI;
 

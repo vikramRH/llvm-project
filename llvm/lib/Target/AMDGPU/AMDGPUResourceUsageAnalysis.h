@@ -17,6 +17,7 @@
 
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/CodeGen/MachineFunctionPass.h"
+#include "llvm/IR/PassManager.h"
 
 namespace llvm {
 
@@ -24,9 +25,8 @@ class GCNSubtarget;
 class MachineFunction;
 class TargetMachine;
 
-struct AMDGPUResourceUsageAnalysis : public MachineFunctionPass {
+struct AMDGPUResourceUsageInfo {
 public:
-  static char ID;
   // Track resource usage for callee functions.
   struct SIFunctionResourceInfo {
     // Track the number of explicitly used VGPRs. Special registers reserved at
@@ -44,16 +44,9 @@ public:
     SmallVector<const Function *, 16> Callees;
   };
 
-  AMDGPUResourceUsageAnalysis() : MachineFunctionPass(ID) {}
-
-  bool runOnMachineFunction(MachineFunction &MF) override;
+  bool compute(MachineFunction &MF, const TargetMachine& TM);
 
   const SIFunctionResourceInfo &getResourceInfo() const { return ResourceInfo; }
-
-  void getAnalysisUsage(AnalysisUsage &AU) const override {
-    AU.setPreservesAll();
-    MachineFunctionPass::getAnalysisUsage(AU);
-  }
 
 private:
   SIFunctionResourceInfo
@@ -62,5 +55,40 @@ private:
                        uint32_t AssumedStackSizeForExternalCall) const;
   SIFunctionResourceInfo ResourceInfo;
 };
+
+class AMDGPUResourceUsageWrapperLegacy : public MachineFunctionPass {
+  AMDGPUResourceUsageInfo ResourceUsageInfo;
+public:
+  static char ID;
+  
+  AMDGPUResourceUsageWrapperLegacy() : MachineFunctionPass(ID) {}
+
+  void getAnalysisUsage(AnalysisUsage &AU) const override {
+    AU.setPreservesAll();
+    MachineFunctionPass::getAnalysisUsage(AU);
+  }
+  bool runOnMachineFunction(MachineFunction &MF) override;
+  AMDGPUResourceUsageInfo &getInfo() {
+    return ResourceUsageInfo;
+  }
+};
+
+class AMDGPUResourceUsageAnalysis : public AnalysisInfoMixin<AMDGPUResourceUsageAnalysis> {
+  friend AnalysisInfoMixin<AMDGPUResourceUsageAnalysis>;
+  static AnalysisKey Key;
+  const TargetMachine &TM;
+
+public:
+  AMDGPUResourceUsageAnalysis(const TargetMachine &TM) : TM(TM) {}
+
+  using Result = AMDGPUResourceUsageInfo;
+
+  Result run(MachineFunction &MF, MachineFunctionAnalysisManager &MFAM) {
+    auto Info = AMDGPUResourceUsageInfo();
+    Info.compute(MF, TM);
+    return Info;
+  }
+};
+
 } // namespace llvm
 #endif // LLVM_LIB_TARGET_AMDGPU_AMDGPURESOURCEUSAGEANALYSIS_H

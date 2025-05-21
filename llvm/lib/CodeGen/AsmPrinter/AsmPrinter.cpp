@@ -1808,7 +1808,6 @@ static StringRef getMIMnemonic(const MachineInstr &MI, MCStreamer &Streamer) {
 /// EmitFunctionBody - This method emits the body and trailer for a
 /// function.
 void AsmPrinter::emitFunctionBody() {
-  llvm::dbgs() << "AsmPrinter::emitFunctionBody: " << MF->getName() << "\n";
   emitFunctionHeader();
 
   // Emit target-specific gunk before the function body.

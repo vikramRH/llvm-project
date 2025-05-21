@@ -433,7 +433,7 @@ ModulePass *createAMDGPUPrintfRuntimeBinding();
 void initializeAMDGPUPrintfRuntimeBindingPass(PassRegistry&);
 extern char &AMDGPUPrintfRuntimeBindingID;
 
-void initializeAMDGPUResourceUsageAnalysisPass(PassRegistry &);
+void initializeAMDGPUResourceUsageWrapperLegacyPass(PassRegistry &);
 extern char &AMDGPUResourceUsageAnalysisID;
 
 struct AMDGPUPrintfRuntimeBindingPass
