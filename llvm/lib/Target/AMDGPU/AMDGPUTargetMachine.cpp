@@ -725,8 +725,6 @@ AMDGPUTargetMachine::AMDGPUTargetMachine(const Target &T, const Triple &TT,
           getEffectiveCodeModel(CM, CodeModel::Small), OptLevel),
       TLOF(createTLOF(getTargetTriple())) {
   initAsmInfo();
-  if (getSelectorType(*this) != InstructionSelectionType::GlobalISel)
-    this->Options.EnableNewPM = true;
   if (TT.isAMDGCN()) {
     if (getMCSubtargetInfo()->checkFeatures("+wavefrontsize64"))
       MRI.reset(llvm::createGCNMCRegisterInfo(AMDGPUDwarfFlavour::Wave64));
@@ -1080,7 +1078,10 @@ GCNTargetMachine::GCNTargetMachine(const Target &T, const Triple &TT,
                                    std::optional<Reloc::Model> RM,
                                    std::optional<CodeModel::Model> CM,
                                    CodeGenOptLevel OL, bool JIT)
-    : AMDGPUTargetMachine(T, TT, CPU, FS, Options, RM, CM, OL) {}
+    : AMDGPUTargetMachine(T, TT, CPU, FS, Options, RM, CM, OL) {
+  if (getSelectorType(*this) != InstructionSelectionType::GlobalISel)
+    this->Options.EnableNewPM = true;
+}
 
 const TargetSubtargetInfo *
 GCNTargetMachine::getSubtargetImpl(const Function &F) const {
