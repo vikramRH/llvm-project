@@ -642,7 +642,7 @@ Error CodeGenPassBuilder<Derived, TargetMachineT>::buildPipeline(
       return Err;
     PrinterImpl =
         TM.getTarget().createAsmPrinter(TM, std::move(*MCStreamerOrErr));
-    addIRPass(AsmPrinterInitializePass(PrinterImpl));
+    addIRPass(AsmPrinterInitializePass(PrinterImpl), true);
   }
 
   {
