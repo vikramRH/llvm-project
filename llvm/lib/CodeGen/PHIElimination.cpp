@@ -127,11 +127,11 @@ public:
     LIS = LISWrapper ? &LISWrapper->getLIS() : nullptr;
     MLI = MLIWrapper ? &MLIWrapper->getLI() : nullptr;
     MDT = MDTWrapper ? &MDTWrapper->getDomTree() : nullptr;
-    llvm::dbgs() << "Analyses available: " <<
-        (LV ? "LiveVariables " : "")
-        << (LIS ? "LiveIntervals " : "")
-        << (MLI ? "MachineLoopInfo " : "")
-        << (MDT ? "MachineDominatorTree " : "") << "\n";
+    // llvm::dbgs() << "Analyses available: " <<
+    //     (LV ? "LiveVariables " : "")
+    //     << (LIS ? "LiveIntervals " : "")
+    //     << (MLI ? "MachineLoopInfo " : "")
+    //     << (MDT ? "MachineDominatorTree " : "") << "\n";
   }
 
   PHIEliminationImpl(MachineFunction &MF, MachineFunctionAnalysisManager &AM)
@@ -141,11 +141,11 @@ public:
         MDT(AM.getCachedResult<MachineDominatorTreeAnalysis>(MF)), MFAM(&AM) {
           LIS = nullptr;
           MLI = nullptr;
-          llvm::dbgs() << "Analyses available: "
-               << (LV ? "LiveVariables " : "")
-               << (LIS ? "LiveIntervals " : "")
-               << (MLI ? "MachineLoopInfo " : "")
-               << (MDT ? "MachineDominatorTree " : "") << "\n";
+          // llvm::dbgs() << "Analyses available: "
+          //      << (LV ? "LiveVariables " : "")
+          //      << (LIS ? "LiveIntervals " : "")
+          //      << (MLI ? "MachineLoopInfo " : "")
+          //      << (MDT ? "MachineDominatorTree " : "") << "\n";
         }
 
   bool run(MachineFunction &MF);
@@ -225,8 +225,8 @@ bool PHIEliminationImpl::run(MachineFunction &MF) {
   } else {
     MDT = MFAM->getCachedResult<MachineDominatorTreeAnalysis>(MF);
   }
-  llvm::dbgs() << "MDT is available: "
-               << (MDT ? "yes" : "no") << "\n";
+  // llvm::dbgs() << "MDT is available: "
+              //  << (MDT ? "yes" : "no") << "\n";
   MachineDomTreeUpdater MDTU(MDT, MachineDomTreeUpdater::UpdateStrategy::Lazy);
 
   bool Changed = false;

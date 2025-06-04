@@ -4245,7 +4245,7 @@ RegisterCoalescerPass::run(MachineFunction &MF,
   MFPropsModifier _(*this, MF);
   auto &LIS = MFAM.getResult<LiveIntervalsAnalysis>(MF);
   auto &Loops = MFAM.getResult<MachineLoopAnalysis>(MF);
-  auto *SI = MFAM.getCachedResult<SlotIndexesAnalysis>(MF);
+  auto *SI = &MFAM.getResult<SlotIndexesAnalysis>(MF);
   RegisterCoalescer Impl(&LIS, SI, &Loops);
   if (!Impl.run(MF))
     return PreservedAnalyses::all();

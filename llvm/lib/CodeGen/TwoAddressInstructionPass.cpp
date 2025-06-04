@@ -248,7 +248,8 @@ TwoAddressInstructionPass::run(MachineFunction &MF,
   PA.preserve<LiveVariablesAnalysis>();
   PA.preserve<MachineDominatorTreeAnalysis>();
   PA.preserve<MachineLoopAnalysis>();
-  PA.preserve<SlotIndexesAnalysis>();
+  // PA.preserve<SlotIndexesAnalysis>();
+  PA.abandon<SlotIndexesAnalysis>();
   PA.preserveSet<CFGAnalyses>();
   return PA;
 }
