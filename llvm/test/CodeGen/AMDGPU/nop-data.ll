@@ -1,4 +1,4 @@
-; RUN: llc -mtriple=amdgcn--amdhsa -mcpu=fiji -filetype=obj < %s | llvm-objdump -d - --mcpu=fiji | FileCheck %s
+; RUN: llc -enable-new-pm=0 -mtriple=amdgcn--amdhsa -mcpu=fiji -filetype=obj < %s | llvm-objdump -d - --mcpu=fiji | FileCheck %s
 
 ; CHECK: <kernel0>:
 ; CHECK: s_endpgm

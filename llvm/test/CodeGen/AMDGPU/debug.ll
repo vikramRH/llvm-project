@@ -1,5 +1,5 @@
-; RUN: llc < %s -mtriple=amdgcn -mcpu=verde -verify-machineinstrs -mattr=dumpcode -filetype=obj | FileCheck --check-prefix=SI %s
-; RUN: llc < %s -mtriple=amdgcn -mcpu=tonga -verify-machineinstrs -mattr=dumpcode -filetype=obj | FileCheck --check-prefix=SI %s
+; RUN: llc -enable-new-pm=0 < %s -mtriple=amdgcn -mcpu=verde -verify-machineinstrs -mattr=dumpcode -filetype=obj | FileCheck --check-prefix=SI %s
+; RUN: llc -enable-new-pm=0 < %s -mtriple=amdgcn -mcpu=tonga -verify-machineinstrs -mattr=dumpcode -filetype=obj | FileCheck --check-prefix=SI %s
 
 ; Test for a crash in the custom assembly dump code.
 

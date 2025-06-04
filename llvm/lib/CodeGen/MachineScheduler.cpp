@@ -32,6 +32,7 @@
 #include "llvm/CodeGen/MachineLoopInfo.h"
 #include "llvm/CodeGen/MachineOperand.h"
 #include "llvm/CodeGen/MachinePassRegistry.h"
+#include "llvm/CodeGen/MachinePostDominators.h"
 #include "llvm/CodeGen/MachineRegisterInfo.h"
 #include "llvm/CodeGen/RegisterClassInfo.h"
 #include "llvm/CodeGen/RegisterPressure.h"
@@ -732,10 +733,10 @@ PostMachineSchedulerPass::run(MachineFunction &MF,
                               MachineFunctionAnalysisManager &MFAM) {
   if (EnablePostRAMachineSched.getNumOccurrences()) {
     if (!EnablePostRAMachineSched)
-      return PreservedAnalyses::all();
+      return PreservedAnalyses::all().abandon<MachinePostDominatorTreeAnalysis>();
   } else if (!MF.getSubtarget().enablePostRAMachineScheduler()) {
     LLVM_DEBUG(dbgs() << "Subtarget disables post-MI-sched.\n");
-    return PreservedAnalyses::all();
+    return PreservedAnalyses::all().abandon<MachinePostDominatorTreeAnalysis>();
   }
   LLVM_DEBUG(dbgs() << "Before post-MI-sched:\n"; MF.print(dbgs()));
   auto &MLI = MFAM.getResult<MachineLoopAnalysis>(MF);
@@ -746,10 +747,11 @@ PostMachineSchedulerPass::run(MachineFunction &MF,
   Impl->setMFAM(&MFAM);
   bool Changed = Impl->run(MF, *TM, {MLI, AA});
   if (!Changed)
-    return PreservedAnalyses::all();
+    return PreservedAnalyses::all().abandon<MachinePostDominatorTreeAnalysis>();;
 
   PreservedAnalyses PA = getMachineFunctionPassPreservedAnalyses();
   PA.preserveSet<CFGAnalyses>();
+  PA.abandon<MachinePostDominatorTreeAnalysis>();
   return PA;
 }
 

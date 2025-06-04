@@ -4,10 +4,10 @@
 
 ; Make sure we get the same result if we run multiple times
 ; RUN: opt -S -mtriple=amdgcn-- -passes=amdgpu-lower-ctor-dtor,amdgpu-lower-ctor-dtor < %s | FileCheck %s
-; RUN: llc -mtriple=amdgcn-amd-amdhsa -mcpu=gfx700 -filetype=obj -o - < %s | llvm-readelf -s - 2>&1 | FileCheck %s -check-prefix=VISIBILITY
-; RUN: llc -mtriple=amdgcn-amd-amdhsa -mcpu=gfx700 -filetype=obj -o - < %s | llvm-readelf -S - 2>&1 | FileCheck %s -check-prefix=SECTION
-; RUN: llc -mtriple=amdgcn-amd-amdhsa -amdgpu-lower-global-ctor-dtor=0 -mcpu=gfx700 -filetype=obj -o - < %s | llvm-readelf -s - 2>&1 | FileCheck %s -check-prefix=DISABLED
-; RUN: llc -mtriple=amdgcn-amd-amdhsa -mcpu=gfx700 -filetype=obj -o - < %s | llvm-readelf --notes - 2>&1 | FileCheck %s -check-prefix=METADATA
+; RUN: llc -enable-new-pm=0 -mtriple=amdgcn-amd-amdhsa -mcpu=gfx700 -filetype=obj -o - < %s | llvm-readelf -s - 2>&1 | FileCheck %s -check-prefix=VISIBILITY
+; RUN: llc -enable-new-pm=0 -mtriple=amdgcn-amd-amdhsa -mcpu=gfx700 -filetype=obj -o - < %s | llvm-readelf -S - 2>&1 | FileCheck %s -check-prefix=SECTION
+; RUN: llc -enable-new-pm=0 -mtriple=amdgcn-amd-amdhsa -amdgpu-lower-global-ctor-dtor=0 -mcpu=gfx700 -filetype=obj -o - < %s | llvm-readelf -s - 2>&1 | FileCheck %s -check-prefix=DISABLED
+; RUN: llc -enable-new-pm=0 -mtriple=amdgcn-amd-amdhsa -mcpu=gfx700 -filetype=obj -o - < %s | llvm-readelf --notes - 2>&1 | FileCheck %s -check-prefix=METADATA
 
 @llvm.global_ctors = appending addrspace(1) global [1 x { i32, ptr, ptr }] [{ i32, ptr, ptr } { i32 1, ptr @foo, ptr null }]
 @llvm.global_dtors = appending addrspace(1) global [1 x { i32, ptr, ptr }] [{ i32, ptr, ptr } { i32 1, ptr @bar, ptr null }]
