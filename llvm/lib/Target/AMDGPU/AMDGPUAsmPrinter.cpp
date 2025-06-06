@@ -443,12 +443,16 @@ void AMDGPUAsmPrinter::validateMCResourceInfo(Function &F) {
     uint64_t NumVgpr, NumAgpr;
 
     MachineFunction *MF =
-        !MAM ? MMI->getMachineFunction(F)
-             : &MAM->getResult<FunctionAnalysisManagerModuleProxy>(
-                       *F.getParent())
-                    .getManager()
-                    .getResult<MachineFunctionAnalysis>(F)
-                    .getMF();
+        !MAM ? MMI->getMachineFunction(F) : [&]() -> MachineFunction * {
+      auto *MFA =
+          MAM->getResult<FunctionAnalysisManagerModuleProxy>(*F.getParent())
+              .getManager()
+              .getCachedResult<MachineFunctionAnalysis>(F);
+      if (MFA)
+        return &MFA->getMF();
+      return nullptr;
+    }();
+
     if (MF && NumVgprSymbol->isVariable() && NumAgprSymbol->isVariable() &&
         TryGetMCExprValue(NumVgprSymbol->getVariableValue(), NumVgpr) &&
         TryGetMCExprValue(NumAgprSymbol->getVariableValue(), NumAgpr)) {
