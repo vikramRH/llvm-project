@@ -82,12 +82,12 @@ class CompareRunner:
         rp("[bold red]No RUN command found in the file![/bold red]")
         sys.exit(1)
 
-    def run_till_pass(self, passname: str, live) -> bool:
+    def run_till_pass(self, passname: str, instance_num: int, live) -> bool:
         """Run the test up to a given pass for both npm and legacy, compare outputs."""
         def run(cmd):
             return subprocess.run(cmd, capture_output=True, text=True)
-        npm_cmd = self.run_cmd + [self.args.file, '-o', '-', f'-stop-after={passname}']
-        legacy_cmd = self.run_cmd + [self.args.file, '-o', '-', '-enable-new-pm=0', f'-stop-after={LEGACY_NAME(passname)}']
+        npm_cmd = self.run_cmd + [self.args.file, '-o', '-', f'-stop-after={passname},{instance_num}']
+        legacy_cmd = self.run_cmd + [self.args.file, '-o', '-', '-enable-new-pm=0', f'-stop-after={LEGACY_NAME(passname)},{instance_num-1}']
         self.last_npm_cmd = ' '.join(npm_cmd)
         self.last_legacy_cmd = ' '.join(legacy_cmd)
         print("Running commands:")
@@ -104,7 +104,7 @@ class CompareRunner:
                 new_passname = passname.replace("-", "")
                 rp(f"\n\t[yellow]Retrying with legacy pass name '{new_passname}'...[/yellow]")
                 if new_passname != passname:
-                    output_legacy = run(self.run_cmd + [self.args.file, '-o', '-', '-enable-new-pm=0', f'-stop-after={new_passname}'])
+                    output_legacy = run(self.run_cmd + [self.args.file, '-o', '-', '-enable-new-pm=0', f'-stop-after={new_passname},{instance_num-1}'])
                 if output_legacy.returncode != 0:
                     rp(f"[bold red]Legacy pass '{passname}' failed:[/bold red] {output_legacy.stderr.strip()}")
                     return False
@@ -124,6 +124,14 @@ class CompareRunner:
             return False
         return True
 
+    def get_pass_instance_num(self, passname: str, at_index: int) -> int:
+        """Get the instance number of a pass in the pass list.
+           This is the count of the number of times this pass appears in the list
+           up to the given index (which is this pass's index already).
+        """
+        assert(self.pass_list[at_index] == passname)
+        return sum(1 for i in range(at_index + 1) if self.pass_list[i] == passname)
+
     def binary_search(self) -> int:
         """Binary search to find the first failing pass."""
         start = 0
@@ -132,8 +140,9 @@ class CompareRunner:
             while start <= end:
                 mid = (start + end) // 2
                 self.pass_num = mid
+                instance_num = self.get_pass_instance_num(self.pass_list[mid], mid)
                 live.update(f"[bold green]Searching pass: {self.pass_list[mid]} ({mid}th) ({mid/len(self.pass_list)*100:.2f}%)[/bold green][blue]Range: {start}-{end}[/blue]")
-                if self.run_till_pass(self.pass_list[mid], live):
+                if self.run_till_pass(self.pass_list[mid], instance_num, live):
                     start = mid + 1
                 else:
                     end = mid - 1
