@@ -17,6 +17,7 @@ class ProcessImplicitDefsPass : public PassInfoMixin<ProcessImplicitDefsPass> {
 public:
   PreservedAnalyses run(MachineFunction &MF,
                         MachineFunctionAnalysisManager &MFAM);
+  static bool isRequired() { return true; }
   MachineFunctionProperties getRequiredProperties() const {
     return MachineFunctionProperties().set(
         MachineFunctionProperties::Property::IsSSA);

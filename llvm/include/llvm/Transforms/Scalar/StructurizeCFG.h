@@ -19,6 +19,8 @@ private:
 public:
   StructurizeCFGPass(bool SkipUniformRegions = false);
 
+  static bool isRequired() { return true; }
+
   void printPipeline(raw_ostream &OS,
                      function_ref<StringRef(StringRef)> MapClassName2PassName);
 
