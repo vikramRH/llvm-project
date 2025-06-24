@@ -44,13 +44,20 @@ class CompareRunner:
         parser.add_argument("l", nargs='?', type=str, help="Passname: legacy")
         parser.add_argument("n", type=str, help="Passname: new", nargs="?")
         parser.add_argument("-e", "--auto-explore", action="store_true", help="Automatically explore the test")
+        parser.add_argument("--line", type=int, help="The RUN line to run")
+        parser.add_argument("--start-before", type=str, help="Start before this pass. Format: <passname>,<instance_num>")
+        parser.add_argument("--start-after", type=str, help="Start after this pass." )
+        parser.add_argument("--pass-list", type=str, help="Comma-separated list of passes to run. If not provided, will read from npm-pipeline.log")
         args = parser.parse_args()
         if args.n is None:
             args.n = args.l
         return args
 
-    def load_pass_list(self, log_file: str = "npm-pipeline.log") -> List[str]:
+    def load_pass_list(self, log_file: str = "npm-pipeline.log", ) -> List[str]:
         """Load and process the list of passes from the log file."""
+        if self.args.pass_list:
+            return self.args.pass_list.split(',')
+
         with open(log_file, "r") as file:
             lines = file.readlines()
         lines = [line.strip() for line in lines if line.strip()]
@@ -62,10 +69,38 @@ class CompareRunner:
         def process(line: str) -> str:
             return line.replace("<", "").replace(">", "").replace(" ", "")
         processed = [process(line) for line in filtered if "verify" not in line]
+        if self.args.start_before:
+            start_pass, instance_num = self.args.start_before.split(",")
+            if start_pass not in processed:
+                rp(f"[bold red]Pass '{start_pass}' not found in the pass list![/bold red]")
+                sys.exit(1)
+            # find the instance_num'th occurrence of start_pass in processed
+            instance_num = int(instance_num)
+            # using functional programming
+            occurrences = [i for i, pass_name in enumerate(processed) if pass_name == start_pass]
+            if instance_num > len(occurrences):
+                rp(f"[bold red]Instance number {instance_num} for pass '{start_pass}' exceeds the number of occurrences ({len(occurrences)}) in the pass list![/bold red]")
+                sys.exit(1)
+            start_index = occurrences[instance_num - 1]  # Get the index of the instance_num'th occurrence
+            rp(f"[bold green]Starting before pass '{start_pass}' at instance {instance_num} (index {start_index})[/bold green]")
+            return processed[start_index:]  # Start after the specified pass
+        elif self.args.start_after:
+            start_pass, instance_num = self.args.start_after.split(",")
+            if start_pass not in processed:
+                rp(f"[bold red]Pass '{start_pass}' not found in the pass list![/bold red]")
+                sys.exit(1)
+            occurrences = [i for i, pass_name in enumerate(processed) if pass_name == start_pass]
+            if instance_num > len(occurrences):
+                rp(f"[bold red]Instance number {instance_num} for pass '{start_pass}' exceeds the number of occurrences ({len(occurrences)}) in the pass list![/bold red]")
+                sys.exit(1)
+            instance_num = int(instance_num)
+            start_index = occurrences[instance_num - 1]
+            return processed[start_index+1:]  # Start at the specified pass
         return processed[1:]  # skip the first line
 
     def extract_run_cmd(self, file: str) -> List[str]:
         """Extract the run command from the test file's RUN line."""
+        filter_out_args = ["-stop-after", "-stop-before", "-enable-new-pm", "-o", "-disable-output"]
         start_of_line = "; RUN:" if file.endswith(".ll") else "# RUN: "
         with open(file, "r") as f:
             for line in f:
@@ -73,6 +108,8 @@ class CompareRunner:
                     cmd = line[len(start_of_line):].strip()
                     cmd = cmd.split("|")[0].strip()  # Take the first command before any pipe
                     cmd = cmd.replace("llc", "test_build/bin/llc").replace("%s", "")
+                    # remove any -stop-{after|before}
+                    cmd = " ".join([arg for arg in cmd.split() if not any(arg.startswith(filter) for filter in filter_out_args) and arg != '-'])
                     # Remove input redirect if present
                     if "<" in cmd:
                         parts = cmd.split("<")
@@ -91,6 +128,7 @@ class CompareRunner:
         self.last_npm_cmd = ' '.join(npm_cmd)
         self.last_legacy_cmd = ' '.join(legacy_cmd)
         print("Running commands:")
+        live.console.print(f"[dim]NPM cmd: {self.last_npm_cmd}[/dim]")
         live.console.print(f"[yellow]Running for npm: {passname}[/yellow] {self.pass_num}")
         output_npm = run(npm_cmd)
         live.console.print(f"[yellow]Running for legacy: {passname}[/yellow]")
@@ -168,6 +206,8 @@ class CompareRunner:
 
     def run(self):
         self.pass_list = self.load_pass_list()
+        # print(f"Pass list is {self.pass_list}")
+        # sys.exit(0)
         self.run_cmd = self.extract_run_cmd(self.args.file)
         rp(f"[bold green]Run command: {' '.join(self.run_cmd)}[/bold green]")
         if self.args.auto_explore:
