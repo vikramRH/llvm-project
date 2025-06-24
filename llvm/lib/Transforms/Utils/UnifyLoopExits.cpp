@@ -229,6 +229,8 @@ PreservedAnalyses UnifyLoopExitsPass::run(Function &F,
                                           FunctionAnalysisManager &AM) {
   LLVM_DEBUG(dbgs() << "===== Unifying loop exits in function " << F.getName()
                     << "\n");
+  auto XPA = PreservedAnalyses::all().abandon<LoopAnalysis>().abandon<DominatorTreeAnalysis>();
+  AM.invalidate(F, XPA);
   auto &LI = AM.getResult<LoopAnalysis>(F);
   auto &DT = AM.getResult<DominatorTreeAnalysis>(F);
 
