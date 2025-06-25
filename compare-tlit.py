@@ -10,7 +10,8 @@ NPM_TO_LEGACY = {
     "reg-usage-collector": "RegUsageInfoCollector",
     "prolog-epilog": "prologepilog",
     "lower-invoke": "lowerinvoke",
-    "process-imp-defs": "processimpdefs"
+    "process-imp-defs": "processimpdefs",
+    "ee-instrument": "post-inline-ee-instrument"
 }
 
 def LEGACY_NAME(npm_passname: str) -> str:
@@ -47,6 +48,7 @@ class CompareRunner:
         parser.add_argument("--line", type=int, help="The RUN line to run")
         parser.add_argument("--start-before", type=str, help="Start before this pass. Format: <passname>,<instance_num>")
         parser.add_argument("--start-after", type=str, help="Start after this pass." )
+        parser.add_argument("--stop-after", type=str, help="Stop after this pass." )
         parser.add_argument("--pass-list", type=str, help="Comma-separated list of passes to run. If not provided, will read from npm-pipeline.log")
         args = parser.parse_args()
         if args.n is None:
@@ -86,6 +88,7 @@ class CompareRunner:
             return processed[start_index:]  # Start after the specified pass
         elif self.args.start_after:
             start_pass, instance_num = self.args.start_after.split(",")
+            instance_num = int(instance_num)
             if start_pass not in processed:
                 rp(f"[bold red]Pass '{start_pass}' not found in the pass list![/bold red]")
                 sys.exit(1)
@@ -93,9 +96,21 @@ class CompareRunner:
             if instance_num > len(occurrences):
                 rp(f"[bold red]Instance number {instance_num} for pass '{start_pass}' exceeds the number of occurrences ({len(occurrences)}) in the pass list![/bold red]")
                 sys.exit(1)
-            instance_num = int(instance_num)
             start_index = occurrences[instance_num - 1]
             return processed[start_index+1:]  # Start at the specified pass
+        if self.args.stop_after:
+            stop_pass, instance_num = self.args.stop_after.split(",")
+            instance_num = int(instance_num)
+            if stop_pass not in processed:
+                rp(f"[bold red]Pass '{stop_pass}' not found in the pass list![/bold red]")
+                sys.exit(1)
+            occurrences = [i for i, pass_name in enumerate(processed) if pass_name == stop_pass]
+            if instance_num > len(occurrences):
+                rp(f"[bold red]Instance number {instance_num} for pass '{stop_pass}' exceeds the number of occurrences ({len(occurrences)}) in the pass list![/bold red]")
+                sys.exit(1)
+            index = occurrences[instance_num - 1]
+            return processed[:index+1]
+
         return processed[1:]  # skip the first line
 
     def extract_run_cmd(self, file: str) -> List[str]:
@@ -122,7 +137,8 @@ class CompareRunner:
     def run_till_pass(self, passname: str, instance_num: int, live) -> bool:
         """Run the test up to a given pass for both npm and legacy, compare outputs."""
         def run(cmd):
-            return subprocess.run(cmd, capture_output=True, text=True)
+            output = subprocess.run(cmd, capture_output=True, text=True)
+            return output
         npm_cmd = self.run_cmd + [self.args.file, '-o', '-', f'-stop-after={passname},{instance_num}']
         legacy_cmd = self.run_cmd + [self.args.file, '-o', '-', '-enable-new-pm=0', f'-stop-after={LEGACY_NAME(passname)},{instance_num-1}']
         self.last_npm_cmd = ' '.join(npm_cmd)
@@ -151,7 +167,7 @@ class CompareRunner:
             else:
                 rp(f"[bold red]Legacy pass '{passname}' failed:[/bold red] {output_legacy.stderr.strip()}")
                 return False
-        rp(f"Comparing outputs for pass '{passname}'...")
+        rp(f"Comparing outputs for pass '{passname}'...", end=" ")
         if output_npm.stdout != output_legacy.stdout:
             rp(f"[bold red]Output mismatch for pass '{passname}':[/bold red]")
             with open("npm.out.mir", "w") as f:
@@ -160,6 +176,7 @@ class CompareRunner:
                 f.write(output_legacy.stdout)
             rp("\t[red]Outputs saved to npm.out.mir and legacy.out.mir[/red]")
             return False
+        rp(f"[bold green]Outputs match for pass '{passname}'![/bold green]")
         return True
 
     def get_pass_instance_num(self, passname: str, at_index: int) -> int:
@@ -209,7 +226,7 @@ class CompareRunner:
         # print(f"Pass list is {self.pass_list}")
         # sys.exit(0)
         self.run_cmd = self.extract_run_cmd(self.args.file)
-        rp(f"[bold green]Run command: {' '.join(self.run_cmd)}[/bold green]")
+        rp(f"[bold green]Run command: {' '.join(self.run_cmd)} {self.args.file} -enable-new-pm=1 -o -[/bold green]")
         if self.args.auto_explore:
             self.auto_explore()
 
