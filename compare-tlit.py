@@ -29,6 +29,21 @@ NOT_MATCH_IN_PASS = [
     "asm-printer-finalize"
 ]
 
+def add_stdout_and_enablenpm(cmd: List[str], enable_npm: bool) -> List[str]:
+    enpm = "1" if enable_npm else "0"
+    return cmd + ['-o', '-', '-enable-new-pm=' + enpm]
+
+def run(cmd):
+    output = subprocess.run(cmd, capture_output=True, text=True)
+    return output
+
+def prompt_code_diff():
+                """Prompt to run the diff command and execute if confirmed."""
+                should_run = input("Run the diff command? (y/n): ").strip().lower()
+                if should_run == 'y':
+                    subprocess.run(["code", "--diff", "npm.out.mir", "legacy.out.mir"])
+
+
 class CompareRunner:
     """
     Encapsulates the logic for comparing outputs of two passes (legacy and new) for a given test file.
@@ -50,6 +65,7 @@ class CompareRunner:
         parser.add_argument("--start-after", type=str, help="Start after this pass." )
         parser.add_argument("--stop-after", type=str, help="Stop after this pass." )
         parser.add_argument("--pass-list", type=str, help="Comma-separated list of passes to run. If not provided, will read from npm-pipeline.log")
+        parser.add_argument("-o", "--only-output", action="store_true", help="Only run the command to get the final output before the FileCheck command")
         args = parser.parse_args()
         if args.n is None:
             args.n = args.l
@@ -113,6 +129,19 @@ class CompareRunner:
 
         return processed[1:]  # skip the first line
 
+    def extract_raw_cmd(self, file: str) -> str:
+        filter_out_args = ["-stop-after", "-stop-before", "-enable-new-pm", "-o", "-disable-output"]
+        start_of_line = "; RUN:" if file.endswith(".ll") else "# RUN: "
+        with open(file, "r") as f:
+            for line in f:
+                if line.startswith(start_of_line):
+                    cmd = line[len(start_of_line):].strip()
+                    cmd = cmd.split("|")[0].strip()  # Take the first command before any pipe
+                    cmd = cmd.replace("llc", "test_build/bin/llc").replace("%s", "")
+                    return cmd
+        rp("[bold red]No RUN line found in test.") 
+        sys.exit(1)
+
     def extract_run_cmd(self, file: str) -> List[str]:
         """Extract the run command from the test file's RUN line."""
         filter_out_args = ["-stop-after", "-stop-before", "-enable-new-pm", "-o", "-disable-output"]
@@ -136,9 +165,7 @@ class CompareRunner:
 
     def run_till_pass(self, passname: str, instance_num: int, live) -> bool:
         """Run the test up to a given pass for both npm and legacy, compare outputs."""
-        def run(cmd):
-            output = subprocess.run(cmd, capture_output=True, text=True)
-            return output
+        
         npm_cmd = self.run_cmd + [self.args.file, '-o', '-', f'-stop-after={passname},{instance_num}']
         legacy_cmd = self.run_cmd + [self.args.file, '-o', '-', '-enable-new-pm=0', f'-stop-after={LEGACY_NAME(passname)},{instance_num-1}']
         self.last_npm_cmd = ' '.join(npm_cmd)
@@ -214,10 +241,7 @@ class CompareRunner:
             rp(f"[bold green]Last NPM command: {self.last_npm_cmd}[/bold green]")
             rp(f"[bold green]Last Legacy command: {self.last_legacy_cmd}[/bold green]")
             rp(f"[blue]See the diff: code --diff npm.out.mir legacy.out.mir[/blue]")
-            # prompt to run the diff command
-            should_run = input("Run the diff command? (y/n): ").strip().lower()
-            if should_run == 'y':
-                subprocess.run(["code", "--diff", "npm.out.mir", "legacy.out.mir"])
+            prompt_code_diff()
         else:
             rp("[bold yellow]All passes succeed, is this the right test?[/bold yellow]")
 
@@ -226,9 +250,29 @@ class CompareRunner:
         # print(f"Pass list is {self.pass_list}")
         # sys.exit(0)
         self.run_cmd = self.extract_run_cmd(self.args.file)
-        rp(f"[bold green]Run command: {' '.join(self.run_cmd)} {self.args.file} -enable-new-pm=1 -o -[/bold green]")
         if self.args.auto_explore:
+            rp(f"[bold green]Run command: {' '.join(self.run_cmd)} {self.args.file} -enable-new-pm=1 -o -[/bold green]")
             self.auto_explore()
+        elif self.args.only_output:
+            self.run_only_run_command()
+
+    def run_only_run_command(self):
+        the_cmd = self.extract_run_cmd(self.args.file)
+        npm_cmd = add_stdout_and_enablenpm(the_cmd, True) + [self.args.file]
+        leg_cmd = add_stdout_and_enablenpm(the_cmd, False) + [self.args.file]
+        rp(f"Command is [blue]{npm_cmd}[/blue]")
+        rp(f"Command is [yellow]{leg_cmd}[yellow]")
+        npm_out = run(npm_cmd)
+        leg_out = run(leg_cmd)
+        with open("npm.out.mir", "w") as f:
+            f.write(npm_out.stdout)
+        with open("legacy.out.mir", "w") as f:
+            f.write(leg_out.stdout)
+        if npm_out.stdout == leg_out.stdout:
+            rp("[bold green]NPM and leg final outputs match.[/bold green]")
+        else:
+            rp("[bold red]NPM and leg final outputs differ.[/bold red]")
+            prompt_code_diff()
 
     def get_last_cmds(self): 
         """Return the last run commands for npm and legacy."""
