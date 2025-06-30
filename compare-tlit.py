@@ -145,6 +145,7 @@ class CompareRunner:
     def extract_run_cmd(self, file: str) -> List[str]:
         """Extract the run command from the test file's RUN line."""
         filter_out_args = ["-stop-after", "-stop-before", "-enable-new-pm", "-o", "-disable-output"]
+        filter_out_args = filter_out_args + ["-" + arg for arg in filter_out_args]
         start_of_line = "; RUN:" if file.endswith(".ll") else "# RUN: "
         with open(file, "r") as f:
             for line in f:
