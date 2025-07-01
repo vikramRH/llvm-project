@@ -245,7 +245,6 @@ LLVMContext::getDiagnosticMessagePrefix(DiagnosticSeverity Severity) {
 void LLVMContext::diagnose(const DiagnosticInfo &DI) {
   if (auto *OptDiagBase = dyn_cast<DiagnosticInfoOptimizationBase>(&DI))
     if (LLVMRemarkStreamer *RS = getLLVMRemarkStreamer()) {
-      llvm::dbgs() << "here\n";
       RS->emit(*OptDiagBase);
     }
 
@@ -257,11 +256,9 @@ void LLVMContext::diagnose(const DiagnosticInfo &DI) {
         pImpl->DiagHandler->handleDiagnostics(DI))
       return;
   }
-  llvm::dbgs() << "or here\n";
 
   if (!isDiagnosticEnabled(DI))
     return;
-  llvm::dbgs() << "and here\n";
   // Otherwise, print the message with a prefix based on the severity.
   DiagnosticPrinterRawOStream DP(errs());
   errs() << getDiagnosticMessagePrefix(DI.getSeverity()) << ": ";
