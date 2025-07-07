@@ -242,7 +242,7 @@ TwoAddressInstructionPass::run(MachineFunction &MF,
   MFPropsModifier _(*this, MF);
   bool Changed = Impl.run();
   if (!Changed)
-    return PreservedAnalyses::all().abandon<SlotIndexesAnalysis>();
+    return PreservedAnalyses::all();
   auto PA = getMachineFunctionPassPreservedAnalyses();
   PA.preserve<LiveIntervalsAnalysis>();
   PA.preserve<LiveVariablesAnalysis>();

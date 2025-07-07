@@ -19,7 +19,6 @@
 #include "llvm/CodeGen/StackFrameLayoutAnalysisPass.h"
 #include "llvm/ADT/SetVector.h"
 #include "llvm/Analysis/OptimizationRemarkEmitter.h"
-#include "llvm/CodeGen/MachineDominators.h"
 #include "llvm/CodeGen/MachineFrameInfo.h"
 #include "llvm/CodeGen/MachineFunction.h"
 #include "llvm/CodeGen/MachineFunctionPass.h"
@@ -300,7 +299,7 @@ llvm::StackFrameLayoutAnalysisPass::run(MachineFunction &MF,
                                         MachineFunctionAnalysisManager &MFAM) {
   auto &ORE = MFAM.getResult<MachineOptimizationRemarkEmitterAnalysis>(MF);
   StackFrameLayoutAnalysis(ORE).run(MF);
-  return PreservedAnalyses::all().abandon<MachineDominatorTreeAnalysis>();
+  return PreservedAnalyses::all();
 }
 
 char &llvm::StackFrameLayoutAnalysisPassID = StackFrameLayoutAnalysisLegacy::ID;

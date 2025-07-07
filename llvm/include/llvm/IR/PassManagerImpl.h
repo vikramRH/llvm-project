@@ -20,7 +20,6 @@
 #include "llvm/IR/PassManager.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/Compiler.h"
-#include "llvm/Support/Debug.h"
 #include "llvm/Support/PrettyStackTrace.h"
 
 namespace llvm {
@@ -165,9 +164,6 @@ template <typename IRUnitT, typename... ExtraArgTs>
 inline void AnalysisManager<IRUnitT, ExtraArgTs...>::invalidate(
     IRUnitT &IR, const PreservedAnalyses &PA) {
   // We're done if all analyses on this IR unit are preserved.
-  if (PA.areAllPreserved()) {
-    llvm::dbgs() << ">> All are preserved\n";
-  }
   if (PA.allAnalysesInSetPreserved<AllAnalysesOn<IRUnitT>>())
     return;
 
