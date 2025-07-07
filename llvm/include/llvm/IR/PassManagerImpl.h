@@ -166,7 +166,7 @@ inline void AnalysisManager<IRUnitT, ExtraArgTs...>::invalidate(
     IRUnitT &IR, const PreservedAnalyses &PA) {
   // We're done if all analyses on this IR unit are preserved.
   if (PA.areAllPreserved()) {
-    // llvm::dbgs() << ">> All are preserved\n";
+    llvm::dbgs() << ">> All are preserved\n";
   }
   if (PA.allAnalysesInSetPreserved<AllAnalysesOn<IRUnitT>>())
     return;
