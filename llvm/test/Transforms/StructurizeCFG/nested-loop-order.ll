@@ -1,5 +1,5 @@
 ; RUN: opt -S -structurizecfg %s -o - | FileCheck %s
-; RUN: opt -S -passes=structurizecfg %s -o - | FileCheck %s
+; RUN: opt -S -passes=structurize-cfg %s -o - | FileCheck %s
 
 define void @main(ptr addrspace(1) %out) {
 
