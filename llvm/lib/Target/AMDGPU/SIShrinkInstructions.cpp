@@ -1087,7 +1087,7 @@ bool SIShrinkInstructions::run(MachineFunction &MF) {
       LLVM_DEBUG(dbgs() << "e32 MI = " << *Inst32 << '\n');
     }
   }
-  return false;
+  return true;
 }
 
 bool SIShrinkInstructionsLegacy::runOnMachineFunction(MachineFunction &MF) {
