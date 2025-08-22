@@ -1032,6 +1032,7 @@ class AsmPrinterInitializePass
 public:
   AsmPrinterInitializePass(IntrusiveRefCntPtr<AsmPrinter> Printer)
       : Printer(Printer) {}
+  static bool isRequired() { return true; }
   PreservedAnalyses run(Module &M, ModuleAnalysisManager &MAM) {
     Printer->doInitialization(M, MAM);
     return PreservedAnalyses::all();
@@ -1043,6 +1044,7 @@ class AsmPrinterPass : public PassInfoMixin<AsmPrinterPass> {
 
 public:
   AsmPrinterPass(IntrusiveRefCntPtr<AsmPrinter> Printer) : Printer(Printer) {}
+  static bool isRequired() { return true; }
   PreservedAnalyses run(MachineFunction &MF,
                         MachineFunctionAnalysisManager &MFAM) {
     Printer->run(MF, MFAM);
@@ -1056,6 +1058,7 @@ class AsmPrinterFinalizePass : public PassInfoMixin<AsmPrinterFinalizePass> {
 public:
   AsmPrinterFinalizePass(IntrusiveRefCntPtr<AsmPrinter> Printer)
       : Printer(Printer) {}
+  static bool isRequired() { return true; }
   PreservedAnalyses run(Module &M, ModuleAnalysisManager &MAM) {
     Printer->doFinalization(M, MAM);
     return PreservedAnalyses::all();
