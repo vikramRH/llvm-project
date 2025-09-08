@@ -1026,7 +1026,7 @@ Error CodeGenPassBuilder<Derived, TargetMachineT>::addMachinePasses(
   }
 
   if (TM.Options.EnableIPRA) {
-    addPass(RequireAnalysisPass<PhysicalRegisterUsageAnalysis, Module>());
+    addPass(RequireAnalysisPass<PhysicalRegisterUsageAnalysis, Module>(), /*Force*/true);
     addPass(RegUsageInfoPropagationPass());
   }
   // Run pre-ra passes.
@@ -1097,7 +1097,6 @@ Error CodeGenPassBuilder<Derived, TargetMachineT>::addMachinePasses(
   if (TM.Options.EnableIPRA) {
     // Collect register usage information and produce a register mask of
     // clobbered registers, to be used to optimize call sites.
-    addPass(RequireAnalysisPass<PhysicalRegisterUsageAnalysis, Module>());
     addPass(RegUsageInfoCollectorPass());
   }
 
