@@ -141,7 +141,8 @@ class AMDGPUCodeGenPassBuilder
 public:
   AMDGPUCodeGenPassBuilder(GCNTargetMachine &TM,
                            const CGPassBuilderOption &Opts,
-                           PassInstrumentationCallbacks *PIC);
+                           PassInstrumentationCallbacks *PIC,
+                           PassBuilder &PB);
 
   void addIRPasses(AddIRPass &) const;
   void addCodeGenPrepare(AddIRPass &) const;
@@ -815,7 +816,7 @@ void AMDGPUTargetMachine::registerDefaultAliasAnalyses(AAManager &AAM) {
 }
 
 static Expected<ScanOptions>
-parseAMDGPUAtomicOptimizerStrategy(StringRef Params) {
+parseAMDGPUAtomicOptimizerStrategy(StringRef Params, const PassBuilder &) {
   if (Params.empty())
     return ScanOptions::Iterative;
   Params.consume_front("strategy=");
@@ -829,8 +830,8 @@ parseAMDGPUAtomicOptimizerStrategy(StringRef Params) {
   return make_error<StringError>("invalid parameter", inconvertibleErrorCode());
 }
 
-Expected<AMDGPUAttributorOptions>
-parseAMDGPUAttributorPassOptions(StringRef Params) {
+static Expected<AMDGPUAttributorOptions>
+parseAMDGPUAttributorPassOptions(StringRef Params, const PassBuilder &PB) {
   AMDGPUAttributorOptions Result;
   while (!Params.empty()) {
     StringRef ParamName;
@@ -1160,8 +1161,8 @@ GCNTargetMachine::getTargetTransformInfo(const Function &F) const {
 Error GCNTargetMachine::buildCodeGenPipeline(
     ModulePassManager &MPM, raw_pwrite_stream &Out, raw_pwrite_stream *DwoOut,
     CodeGenFileType FileType, const CGPassBuilderOption &Opts, MCContext &Ctx,
-    PassInstrumentationCallbacks *PIC) {
-  AMDGPUCodeGenPassBuilder CGPB(*this, Opts, PIC);
+    PassInstrumentationCallbacks *PIC, PassBuilder &PB) {
+  AMDGPUCodeGenPassBuilder CGPB(*this, Opts, PIC, PB);
   return CGPB.buildPipeline(MPM, Out, DwoOut, FileType, Ctx);
 }
 
@@ -2056,8 +2057,8 @@ bool GCNTargetMachine::parseMachineFunctionInfo(
 
 AMDGPUCodeGenPassBuilder::AMDGPUCodeGenPassBuilder(
     GCNTargetMachine &TM, const CGPassBuilderOption &Opts,
-    PassInstrumentationCallbacks *PIC)
-    : CodeGenPassBuilder(TM, Opts, PIC) {
+    PassInstrumentationCallbacks *PIC, PassBuilder &PB)
+    : CodeGenPassBuilder(TM, Opts, PIC, PB) {
   Opt.MISchedPostRA = true;
   Opt.RequiresCodeGenSCCOrder = true;
   // Exceptions and StackMaps are not supported, so these passes will never do
@@ -2304,7 +2305,8 @@ Error AMDGPUCodeGenPassBuilder::addRegAssignmentOptimized(
 
   addPass(GCNPreRALongBranchRegPass());
 
-  addPass(RAGreedyPass({onlyAllocateSGPRs, "sgpr"}));
+  addRegAllocPassOrOpt(
+      addPass, []() { return RAGreedyPass({onlyAllocateSGPRs, "sgpr"}); });
 
   // Commit allocated register changes. This is mostly necessary because too
   // many things rely on the use lists of the physical registers, such as the
@@ -2324,14 +2326,15 @@ Error AMDGPUCodeGenPassBuilder::addRegAssignmentOptimized(
   addPass(SIPreAllocateWWMRegsPass());
 
   // For allocating other wwm register operands.
-  addPass(RAGreedyPass({onlyAllocateWWMRegs, "wwm"}));
+  addRegAllocPassOrOpt(
+      addPass, []() { return RAGreedyPass({onlyAllocateWWMRegs, "wwm"}); });
   addPass(SILowerWWMCopiesPass());
   addPass(VirtRegRewriterPass(false));
   addPass(AMDGPUReserveWWMRegsPass());
 
   // For allocating per-thread VGPRs.
-  addPass(RAGreedyPass({onlyAllocateVGPRs, "vgpr"}));
-
+  addRegAllocPassOrOpt(
+      addPass, []() { return RAGreedyPass({onlyAllocateVGPRs, "vgpr"}); });
 
   addPreRewrite(addPass);
   addPass(VirtRegRewriterPass(true));
