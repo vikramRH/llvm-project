@@ -93,7 +93,7 @@ define amdgpu_kernel void @trap(ptr addrspace(1) nocapture readonly %arg0) {
 ; HSA-TRAP-GFX1100-O0-NEXT:    s_mov_b32 m0, s0
 ; HSA-TRAP-GFX1100-O0-NEXT:    s_sendmsg sendmsg(MSG_INTERRUPT)
 ; HSA-TRAP-GFX1100-O0-NEXT:    s_mov_b32 m0, ttmp2
-; HSA-TRAP-GFX1100-O0-NEXT:  .LBB0_1: ; =>This Inner Loop Header: Depth=1
+; HSA-TRAP-GFX1100-O0-NEXT:  .LBB0_1:
 ; HSA-TRAP-GFX1100-O0-NEXT:    s_sethalt 5
 ; HSA-TRAP-GFX1100-O0-NEXT:    s_branch .LBB0_1
   store volatile i32 1, ptr addrspace(1) %arg0
@@ -249,7 +249,7 @@ define amdgpu_kernel void @non_entry_trap(ptr addrspace(1) nocapture readonly %a
 ; HSA-TRAP-GFX1100-O0-NEXT:    global_store_b32 v0, v1, s[0:1] dlc
 ; HSA-TRAP-GFX1100-O0-NEXT:    s_waitcnt_vscnt null, 0x0
 ; HSA-TRAP-GFX1100-O0-NEXT:    s_endpgm
-; HSA-TRAP-GFX1100-O0-NEXT:  .LBB1_3: ; =>This Inner Loop Header: Depth=1
+; HSA-TRAP-GFX1100-O0-NEXT:  .LBB1_3:
 ; HSA-TRAP-GFX1100-O0-NEXT:    s_sethalt 5
 ; HSA-TRAP-GFX1100-O0-NEXT:    s_branch .LBB1_3
 entry:
