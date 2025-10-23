@@ -158,10 +158,6 @@ public:
     return Impl.run(MF);
   }
 
-  MachineFunctionProperties getSetProperties() const override {
-    return MachineFunctionProperties().setNoPHIs();
-  }
-
   void getAnalysisUsage(AnalysisUsage &AU) const override;
 };
 
