@@ -6056,6 +6056,11 @@ void LSRInstance::ImplementSolution(
   auto InsertedInsts = InsertedNonLCSSAInsts.takeVector();
   formLCSSAForInstructions(InsertedInsts, DT, LI, &SE);
 
+  // If we have parent loops, restore LCSSA form for them as well since
+  // our transformations may have broken their LCSSA form.
+  if (L->getParentLoop())
+    formLCSSARecursively(*L->getParentLoop(), DT, &LI, &SE);
+
   for (const IVChain &Chain : IVChainVec) {
     GenerateIVChain(Chain, DeadInsts);
     Changed = true;
