@@ -531,7 +531,7 @@ void initializeAMDGPUAAWrapperPassPass(PassRegistry&);
 ImmutablePass *createAMDGPUExternalAAWrapperPass();
 void initializeAMDGPUExternalAAWrapperPass(PassRegistry&);
 
-void initializeAMDGPUArgumentUsageInfoPass(PassRegistry &);
+void initializeAMDGPUArgumentUsageInfoWrapperLegacyPass(PassRegistry &);
 
 ModulePass *createAMDGPUExportKernelRuntimeHandlesLegacyPass();
 void initializeAMDGPUExportKernelRuntimeHandlesLegacyPass(PassRegistry &);
